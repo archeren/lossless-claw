@@ -35,6 +35,8 @@ function createTestConfig(databasePath: string): LcmConfig {
     condensedTargetTokens: 900,
     maxExpandTokens: 4000,
     largeFileTokenThreshold: 25_000,
+    summaryProvider: "",
+    summaryModel: "",
     largeFileSummaryProvider: "",
     largeFileSummaryModel: "",
     autocompactDisabled: false,

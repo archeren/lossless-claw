@@ -18,6 +18,8 @@ const BASE_CONFIG: LcmConfig = {
   condensedTargetTokens: 900,
   maxExpandTokens: 250,
   largeFileTokenThreshold: 25_000,
+  summaryProvider: "",
+  summaryModel: "",
   largeFileSummaryProvider: "",
   largeFileSummaryModel: "",
   autocompactDisabled: false,

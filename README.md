@@ -97,13 +97,17 @@ Add a `lossless-claw` entry under `plugins.entries` in your OpenClaw config:
           "incrementalMaxDepth": -1,
           "ignoreSessionPatterns": [
             "agent:*:cron:*"
-          ]
+          ],
+          "summaryProvider": "anthropic",
+          "summaryModel": "claude-3-5-haiku"
         }
       }
     }
   }
 }
 ```
+
+`summaryModel` and `summaryProvider` let you pin compaction summarization to a cheaper or faster model than your main OpenClaw session model. When unset, LCM uses OpenClaw's configured default model/provider.
 
 ### Environment variables
 
@@ -125,10 +129,17 @@ Add a `lossless-claw` entry under `plugins.entries` in your OpenClaw config:
 | `LCM_LARGE_FILE_TOKEN_THRESHOLD` | `25000` | File blocks above this size are intercepted and stored separately |
 | `LCM_LARGE_FILE_SUMMARY_PROVIDER` | `""` | Provider override for large-file summarization |
 | `LCM_LARGE_FILE_SUMMARY_MODEL` | `""` | Model override for large-file summarization |
-| `LCM_SUMMARY_MODEL` | *(from OpenClaw)* | Model for summarization (e.g. `anthropic/claude-sonnet-4-20250514`) |
-| `LCM_SUMMARY_PROVIDER` | *(from OpenClaw)* | Provider override for summarization |
+| `LCM_SUMMARY_MODEL` | `""` | Model override for compaction summarization; falls back to OpenClaw's default model when unset |
+| `LCM_SUMMARY_PROVIDER` | `""` | Provider override for compaction summarization; falls back to `OPENCLAW_PROVIDER` or the provider embedded in the model ref |
 | `LCM_AUTOCOMPACT_DISABLED` | `false` | Disable automatic compaction after turns |
 | `LCM_PRUNE_HEARTBEAT_OK` | `false` | Retroactively delete `HEARTBEAT_OK` turn cycles from LCM storage |
+
+Plugin config equivalents:
+
+- `summaryModel`
+- `summaryProvider`
+
+Environment variables still win over plugin config when both are set.
 
 ### Recommended starting configuration
 
