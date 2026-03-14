@@ -1331,6 +1331,49 @@ const lcmPlugin = {
       }),
     );
 
+    // Register hook to auto-extract peer info from inbound messages
+    api.registerHook(["message_received"], async (event) => {
+      const meta = event.context?.inboundMeta;
+      if (!meta) return;
+
+      const sessionId = event.sessionId;
+      if (!sessionId) return;
+
+      // Extract peer info from inbound metadata
+      const chatId = meta.chat_id;
+      const channel = meta.channel;
+      const chatType = meta.chat_type;
+
+      // For DMs, the peer is the sender
+      // For groups, the peer is the chat/group
+      let peerId: string | undefined;
+      let peerName: string | undefined;
+
+      if (chatType === "dm" && meta.sender_id) {
+        peerId = `user:${meta.sender_id}`;
+        peerName = meta.sender_name || meta.sender;
+      } else if (chatType === "group" && chatId) {
+        peerId = chatId;
+        peerName = meta.chat_name || meta.group_name;
+      }
+
+      if (!peerId) return;
+
+      // Update conversation with peer info
+      try {
+        await lcm.updateConversationPeer({
+          sessionId,
+          peerId,
+          peerName,
+          channel,
+          chatType,
+        });
+        deps.log.info(`[lcm] Auto-extracted peer: ${peerId} (${peerName || "unknown"}) for session ${sessionId}`);
+      } catch (error) {
+        deps.log.warn(`[lcm] Failed to update peer info: ${error}`);
+      }
+    });
+
     api.logger.info(
       `[lcm] Plugin loaded (enabled=${deps.config.enabled}, db=${deps.config.databasePath}, threshold=${deps.config.contextThreshold})`,
     );
