@@ -67,12 +67,16 @@ export type MessagePartRecord = {
 
 export type CreateConversationInput = {
   sessionId: string;
+  peerId?: string;
+  channel?: string;
   title?: string;
 };
 
 export type ConversationRecord = {
   conversationId: ConversationId;
   sessionId: string;
+  peerId: string | null;
+  channel: string | null;
   title: string | null;
   bootstrappedAt: Date | null;
   createdAt: Date;
@@ -102,6 +106,8 @@ export type MessageSearchResult = {
 interface ConversationRow {
   conversation_id: number;
   session_id: string;
+  peer_id: string | null;
+  channel: string | null;
   title: string | null;
   bootstrapped_at: string | null;
   created_at: string;
@@ -155,6 +161,8 @@ function toConversationRecord(row: ConversationRow): ConversationRecord {
   return {
     conversationId: row.conversation_id,
     sessionId: row.session_id,
+    peerId: row.peer_id,
+    channel: row.channel,
     title: row.title,
     bootstrappedAt: row.bootstrapped_at ? new Date(row.bootstrapped_at) : null,
     createdAt: new Date(row.created_at),
@@ -231,12 +239,12 @@ export class ConversationStore {
 
   async createConversation(input: CreateConversationInput): Promise<ConversationRecord> {
     const result = this.db
-      .prepare(`INSERT INTO conversations (session_id, title) VALUES (?, ?)`)
-      .run(input.sessionId, input.title ?? null);
+      .prepare(`INSERT INTO conversations (session_id, peer_id, channel, title) VALUES (?, ?, ?, ?)`)
+      .run(input.sessionId, input.peerId ?? null, input.channel ?? null, input.title ?? null);
 
     const row = this.db
       .prepare(
-        `SELECT conversation_id, session_id, title, bootstrapped_at, created_at, updated_at
+        `SELECT conversation_id, session_id, peer_id, channel, title, bootstrapped_at, created_at, updated_at
        FROM conversations WHERE conversation_id = ?`,
       )
       .get(Number(result.lastInsertRowid)) as unknown as ConversationRow;
@@ -247,7 +255,7 @@ export class ConversationStore {
   async getConversation(conversationId: ConversationId): Promise<ConversationRecord | null> {
     const row = this.db
       .prepare(
-        `SELECT conversation_id, session_id, title, bootstrapped_at, created_at, updated_at
+        `SELECT conversation_id, session_id, peer_id, channel, title, bootstrapped_at, created_at, updated_at
        FROM conversations WHERE conversation_id = ?`,
       )
       .get(conversationId) as unknown as ConversationRow | undefined;
@@ -258,7 +266,7 @@ export class ConversationStore {
   async getConversationBySessionId(sessionId: string): Promise<ConversationRecord | null> {
     const row = this.db
       .prepare(
-        `SELECT conversation_id, session_id, title, bootstrapped_at, created_at, updated_at
+        `SELECT conversation_id, session_id, peer_id, channel, title, bootstrapped_at, created_at, updated_at
        FROM conversations
        WHERE session_id = ?
        ORDER BY created_at DESC
@@ -269,12 +277,12 @@ export class ConversationStore {
     return row ? toConversationRecord(row) : null;
   }
 
-  async getOrCreateConversation(sessionId: string, title?: string): Promise<ConversationRecord> {
+  async getOrCreateConversation(sessionId: string, title?: string, peerId?: string, channel?: string): Promise<ConversationRecord> {
     const existing = await this.getConversationBySessionId(sessionId);
     if (existing) {
       return existing;
     }
-    return this.createConversation({ sessionId, title });
+    return this.createConversation({ sessionId, peerId, channel, title });
   }
 
   async markConversationBootstrapped(conversationId: ConversationId): Promise<void> {
