@@ -14,6 +14,7 @@ import { createLcmExpandQueryTool } from "./src/tools/lcm-expand-query-tool.js";
 import { createLcmExpandTool } from "./src/tools/lcm-expand-tool.js";
 import { createLcmExportTool } from "./src/tools/lcm-export-tool.js";
 import { createLcmGrepTool } from "./src/tools/lcm-grep-tool.js";
+import { createLcmUpdatePeerTool } from "./src/tools/lcm-update-peer-tool.js";
 import type { LcmDependencies } from "./src/types.js";
 
 /** Parse `agent:<agentId>:<suffix...>` session keys. */
@@ -1319,6 +1320,14 @@ const lcmPlugin = {
     api.registerTool((ctx) =>
       createLcmExportTool({
         deps,
+      }),
+    );
+    api.registerTool((ctx) =>
+      createLcmUpdatePeerTool({
+        deps,
+        lcm,
+        sessionId: ctx.sessionId,
+        sessionKey: ctx.sessionKey,
       }),
     );
 
