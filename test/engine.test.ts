@@ -1473,6 +1473,67 @@ describe("LcmContextEngine fidelity and token budget", () => {
     expect(assembledText).not.toContain("worker snapshot");
   });
 
+  it("skips preserve-tagged content in ingest", async () => {
+    const engine = createEngine();
+    const sessionId = "preserve-tag-session";
+
+    // Message with preserve tags should be skipped
+    const result = await engine.ingest({
+      sessionId,
+      message: makeMessage({
+        role: "user",
+        content: "<!-- preserve -->\n# SOUL.md\n\nThis is bootstrap content.\n<!-- /preserve -->",
+      }),
+    });
+
+    expect(result.ingested).toBe(false);
+
+    // No conversation should be created since nothing was ingested
+    const conversation = await engine
+      .getConversationStore()
+      .getConversationBySessionId(sessionId);
+    expect(conversation).toBeNull();
+  });
+
+  it("skips preserve-tagged content with optional type suffix", async () => {
+    const engine = createEngine();
+    const sessionId = "preserve-tag-type-session";
+
+    // Message with preserve:soul type suffix should also be skipped
+    const result = await engine.ingest({
+      sessionId,
+      message: makeMessage({
+        role: "user",
+        content: "<!-- preserve:soul -->\n# SOUL.md\n\nIdentity content.\n<!-- /preserve -->",
+      }),
+    });
+
+    expect(result.ingested).toBe(false);
+  });
+
+  it("ingests content without preserve tags normally", async () => {
+    const engine = createEngine();
+    const sessionId = "no-preserve-tag-session";
+
+    const result = await engine.ingest({
+      sessionId,
+      message: makeMessage({
+        role: "user",
+        content: "This is a regular message without preserve tags.",
+      }),
+    });
+
+    expect(result.ingested).toBe(true);
+
+    const conversation = await engine
+      .getConversationStore()
+      .getConversationBySessionId(sessionId);
+    expect(conversation).not.toBeNull();
+    expect(
+      await engine.getConversationStore().getMessageCount(conversation!.conversationId),
+    ).toBe(1);
+  });
+
   it("afterTurn ingests auto-compaction summary and new turn messages", async () => {
     const engine = createEngine();
     const sessionId = "after-turn-ingest";

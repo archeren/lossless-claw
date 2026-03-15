@@ -1136,6 +1136,15 @@ export class LcmContextEngine implements ContextEngine {
     }
     const stored = toStoredMessage(message);
 
+    // Skip preserve-tagged content (e.g., bootstrap files injected fresh each turn)
+    // Content wrapped with <!-- preserve -->...<!-- /preserve --> should not be ingested
+    // because it's re-injected fresh each turn by the host system.
+    const PRESERVE_START = /<!--\s*preserve(?:\s*:.*?)?\s*-->/i;
+    const PRESERVE_END = /<!--\s*\/preserve\s*-->/i;
+    if (PRESERVE_START.test(stored.content) && PRESERVE_END.test(stored.content)) {
+      return { ingested: false };
+    }
+
     // Get or create conversation for this session
     const conversation = await this.conversationStore.getOrCreateConversation(sessionId);
     const conversationId = conversation.conversationId;
